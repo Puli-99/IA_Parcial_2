@@ -5,18 +5,19 @@ public class EscapeState : State
     public bool IsSafe { get; private set; }
 
     readonly EscapeData data;
-    readonly SheepMovement agent;
-    public EscapeState(SheepMovement agent, EscapeData data)
+    readonly Agent agent;
+    readonly StateMachine sm;
+    public EscapeState(Agent agent, EscapeData data, StateMachine sm)
     {
         this.agent = agent;
         this.data = data;
+        this.sm = sm;
     }
 
     public override void Enter()
     {
         Debug.Log("EscapeState Enter");
         data.escapingTime = 0f;
-        IsSafe = false;
         agent.GetComponentInChildren<Renderer>().material.color = Color.violet;
     }
 
@@ -31,7 +32,16 @@ public class EscapeState : State
         else
             data.escapingTime = 0f;
 
-        IsSafe = data.escapingTime > data.safeTime;
+        if (data.escapingTime > data.safeTime)
+        {
+            if (agent is SheepMovement sheep)
+            {
+                data.hunter = null;
+                sheep.ClearHunter();
+                sheep.AllAgents.Add(sheep);
+                sm.ChangeState(SheepState.Flock);
+            }
+        }
     }
 
     public override void Exit()

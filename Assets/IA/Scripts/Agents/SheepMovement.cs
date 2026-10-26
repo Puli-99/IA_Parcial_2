@@ -1,8 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum SheepState { None, Idle, Flock, Eat, Escape, Dead }
+
 public class SheepMovement : Agent
 {
+
     [SerializeField] PatrolAgent hunter;
     [SerializeField] Transform bait;
 
@@ -27,16 +30,29 @@ public class SheepMovement : Agent
     {
         allAgents.Add(this);
 
-        stateMachine = new StateMachine();
-        idleState = new IdleState(this);
-        flockState = new FlockState(this, flockData);
-        eatState = new EatState(this, eatData);
-        escapeState = new EscapeState(this, escapeData);
-        deadState = new DeadState(this);
+        SFMInitializer();
 
         flockData.transform = this.transform;
+        stateMachine.ChangeState(SheepState.Flock);
+    }
 
-        stateMachine.ChangeState(flockState);
+
+    void SFMInitializer()
+    {
+        stateMachine = new StateMachine();
+
+        idleState = new IdleState(this);
+        flockState = new FlockState(this, flockData);
+        eatState = new EatState(this, eatData, stateMachine);
+        escapeState = new EscapeState(this, escapeData, stateMachine);
+        deadState = new DeadState(this);
+
+
+        stateMachine.RegisterState(SheepState.Idle, idleState);
+        stateMachine.RegisterState(SheepState.Flock, flockState);
+        stateMachine.RegisterState(SheepState.Eat, eatState);
+        stateMachine.RegisterState(SheepState.Escape, escapeState);
+        stateMachine.RegisterState(SheepState.Dead, deadState);
     }
 
 
@@ -46,11 +62,11 @@ public class SheepMovement : Agent
 
         stateMachine.Update();
 
-        if (stateMachine.CurrentState == escapeState && escapeState.IsSafe)
-            ToFlockFromEscape();
+        //if (stateMachine.CurrentState == escapeState && escapeState.IsSafe)
+        //    ToFlockFromEscape();
 
-        if (stateMachine.CurrentState == eatState && eatState.Finished)
-            ToFlockFromEat();
+        //if (stateMachine.CurrentState == eatState && eatState.Finished)
+        //    ToFlockFromEat();
 
         Escape();
 
@@ -69,38 +85,18 @@ public class SheepMovement : Agent
         if (distanceFromHunter < DetectionRange)
         {
             allAgents.Remove(this);
-            stateMachine.ChangeState(escapeState);
+            stateMachine.ChangeState(SheepState.Escape);
         }
-    }
-
-    void ToFlockFromEscape()
-    {
-        if (hunter == null || stateMachine.CurrentState == deadState) return;
-
-        hunter = null;
-        escapeData.hunter = null;
-        allAgents.Add(this);
-        stateMachine.ChangeState(flockState);
-    }
-
-    void ToFlockFromEat()
-    {
-        if (stateMachine.CurrentState != deadState)
-        {
-            bait = null;
-            eatData.baitTransform = null;
-            allAgents.Add(this);
-            stateMachine.ChangeState(flockState);
-        }
-
     }
 
     public void Killed()
     {
         killed = true;
         allAgents.Remove(this);
-        stateMachine.ChangeState(deadState);
+        stateMachine.ChangeState(SheepState.Dead);
     }
+
+    public void ClearHunter() => hunter = null;
 
     public override void OnArrive()
     {
@@ -122,7 +118,7 @@ public class SheepMovement : Agent
                 bait = other.gameObject.transform;
                 eatData.baitTransform = bait;
                 allAgents.Remove(this);
-                stateMachine.ChangeState(eatState);
+                stateMachine.ChangeState(SheepState.Eat);
             }
         }
     }

@@ -17,8 +17,7 @@ public class DeadState : State
 
     public override void Update()
     {
-        if (agent.Velocity != Vector3.zero)
-            agent.AddVelocity(-agent.Velocity);
+        agent.StopVelocity();
     }
 
     public override void Exit()

@@ -14,7 +14,7 @@ public struct Coordinates
     public readonly Coordinates DownRight => new(X + 1, Y - 1);
     public readonly Coordinates DownLeft => new(X - 1, Y - 1);
 
-    public readonly List<Coordinates> Directions => new() { Up, Left, Down, Right, UpRight, UpLeft, DownRight, DownLeft };
+    public readonly List<Coordinates> Directions => new() { Up, Left, Down, Right };
 
     public Coordinates(int x, int y)
     {

@@ -24,7 +24,7 @@ public class PatrolState : State
 
     public override void Update()
     {
-        PatrolPingPong();
+        PatrolLoop();
     }
 
     public override void Exit()

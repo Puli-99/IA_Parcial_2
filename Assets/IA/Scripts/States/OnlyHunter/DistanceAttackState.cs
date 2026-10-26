@@ -10,10 +10,13 @@ public class DistanceAttackState : State
 
     readonly Agent agent;
     readonly DistanceData data;
-    public DistanceAttackState(Agent hunter, DistanceData data)
+
+    StateMachine sm;
+    public DistanceAttackState(Agent hunter, DistanceData data, StateMachine stateMachine)
     {
         this.agent = hunter;
         this.data = data;
+        this.sm = stateMachine;
     }
 
     public override void Enter()
@@ -30,82 +33,68 @@ public class DistanceAttackState : State
 
     public override void Update()
     {
-        if (data.target == null)
-        {
-            data.targetLost = true;
-            return;
-        }
+        if (data.target == null) { Finish(); return; }
 
         float distance = (agent.transform.position - data.target.transform.position).magnitude;
 
-        if (distance < data.aimRange) // Se encuentra en el rango dentro del circulo rojo
+        if (distance < data.aimRange)
         {
             shootCooldownTimer -= Time.deltaTime;
-
             if (shootCooldownTimer >= 0)
             {
                 agent.GetComponentInChildren<Renderer>().material.color = Color.grey;
                 return;
             }
 
-            PrepareShot();
+            if (PrepareShot()) { Finish(); return; }
+
             bShooting = true;
             outOfAimTimer = 0;
             agent.GetComponentInChildren<Renderer>().material.color = data.aimingColor;
-
             agent.StopVelocity();
+        }
+        else if (distance > data.sightRange)
+        {
+            bShooting = false;
+            shootTimer = 0;
+            agent.AddVelocity(agent.Pursuit(data.target));
+            agent.GetComponentInChildren<Renderer>().material.color = data.pursuitColor;
 
+            outOfAimTimer += Time.deltaTime;
+            if (outOfAimTimer > data.pursuitTime) { Finish(); return; }
+        }
+        else if (!bShooting)
+        {
+            shootTimer = 0;
+            agent.AddVelocity(agent.Pursuit(data.target));
         }
         else
         {
-            if (distance > data.sightRange) // Se encuentra fuera del rango del circulo amarillo
+            shootCooldownTimer -= Time.deltaTime;
+            if (shootCooldownTimer >= 0)
             {
-                bShooting = false;
-                shootTimer = 0;
-                agent.AddVelocity(agent.Pursuit(data.target));
-                agent.GetComponentInChildren<Renderer>().material.color = data.pursuitColor;
-
-                outOfAimTimer += Time.deltaTime;
-
-                if (outOfAimTimer > data.pursuitTime)
-                {
-                    data.targetLost = true;
-                }
+                agent.GetComponentInChildren<Renderer>().material.color = Color.grey;
+                return;
             }
-
-            else if (!bShooting) // Se encuentra entre los circulos rojo y amarillo pero todavia no esta apuntando
-            {
-                shootTimer = 0;
-                agent.AddVelocity(agent.Pursuit(data.target));
-            }
-
-            else // Se encuentra entre los circulos rojo y amarillo y ya estaba apuntando
-            {
-                shootCooldownTimer -= Time.deltaTime;
-
-                if (shootCooldownTimer >= 0)
-                {
-                    agent.GetComponentInChildren<Renderer>().material.color = Color.grey;
-                    return;
-                }
-                PrepareShot();
-            }
+            if (PrepareShot()) { Finish(); return; }
         }
     }
 
-    void PrepareShot()
+    bool PrepareShot()
     {
-        if (!data.hasShot)
-        {
-            shootTimer += Time.deltaTime;
-            if (shootTimer > data.aimingTime)
-            {
-                agent.GetComponentInChildren<Renderer>().material.color = data.shotColor;
-                data.hasShot = true;
-                shootCooldownTimer = data.shootCooldown; // Hola Mati :) puse esto aca porque facilita que el cooldown se reinicie solo cuando el hunter se encuentra en el estado
-                data.target.Killed();                   // De esta forma es mas sencillo que llegue a un estado de no poder disparar por cooldown. Salu2
-            }
-        }
+        shootTimer += Time.deltaTime;
+        if (shootTimer <= data.aimingTime) return false;
+
+        agent.GetComponentInChildren<Renderer>().material.color = data.shotColor;
+        shootCooldownTimer = data.shootCooldown;
+        data.target.Killed();
+        return true;
+    }
+
+    void Finish()
+    {
+        data.target = null;
+        sm.ChangeState(PatrolHunterState.Patrol);
     }
 
     public override void Exit()

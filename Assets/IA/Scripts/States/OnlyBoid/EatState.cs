@@ -5,17 +5,18 @@ public class EatState : State
     public bool Finished { get; private set; }
 
     readonly EatData data;
-    readonly Agent agent;
-    public EatState(Agent agent, EatData data)
+    readonly SheepMovement agent;
+    readonly StateMachine sm;
+    public EatState(SheepMovement agent, EatData data, StateMachine sm)
     {
         this.agent = agent;
         this.data = data;
+        this.sm = sm;
     }
     public override void Enter()
     {
         Debug.Log("EatState Enter");
         data.eatTimer = 0f;
-        Finished = false;
         agent.GetComponentInChildren<Renderer>().material.color = Color.brown;
     }
 
@@ -31,7 +32,9 @@ public class EatState : State
             if (data.eatTimer > data.eatTime)
             {
                 Object.Destroy(data.baitTransform.gameObject);
-                Finished = true;
+                data.baitTransform = null;
+                agent.AllAgents.Add(agent);
+                sm.ChangeState(SheepState.Flock);
             }
         }
     }

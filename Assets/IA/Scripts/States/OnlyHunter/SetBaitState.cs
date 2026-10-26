@@ -5,15 +5,17 @@ public class SetBaitState : State
 {
     readonly Agent agent;
     readonly BaitData data;
-    bool baitPlaced;
+    readonly StateMachine sm;
     float baitTimer;
     Vector3 baitPosition;
-    public bool BaitPlaced => baitPlaced;
+    //bool baitPlaced;
+    //public bool BaitPlaced => baitPlaced;
 
-    public SetBaitState(Agent agent, BaitData data)
+    public SetBaitState(Agent agent, BaitData data, StateMachine stateMachine)
     {
         this.agent = agent;
         this.data = data;
+        this.sm = stateMachine;
     }
 
     public override void Enter()
@@ -21,7 +23,7 @@ public class SetBaitState : State
         Debug.Log("BaitState Enter");
         int randomIndex = UnityEngine.Random.Range(0, data.baitSpots.Count);
         baitPosition = data.baitSpots[randomIndex].position;
-        baitPlaced = false;
+        //baitPlaced = false;
         baitTimer = 0;
         agent.GetComponentInChildren<Renderer>().material.color = Color.forestGreen;
     }
@@ -31,7 +33,7 @@ public class SetBaitState : State
         agent.AddVelocity(agent.Arrive(baitPosition));
         float agentDistancetFromBaitPosition = (agent.transform.position - baitPosition).magnitude;
 
-        if (agentDistancetFromBaitPosition <= 0.1f && baitPlaced == false)
+        if (agentDistancetFromBaitPosition <= 0.1f /*&& baitPlaced == false*/)
         {
             agent.AddVelocity(-agent.Velocity);
             baitTimer += Time.deltaTime;
@@ -40,9 +42,10 @@ public class SetBaitState : State
 
             if (data.baitPreparationTime < baitTimer)
             {
-                baitPlaced = true;
+                //baitPlaced = true;
                 UnityEngine.Object.Instantiate(data.bait, baitPosition, Quaternion.identity);
-                baitTimer = 0;
+                sm.ChangeState(PatrolHunterState.Patrol);
+                //baitTimer = 0;
             }
         }
     }

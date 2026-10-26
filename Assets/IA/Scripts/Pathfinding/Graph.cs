@@ -16,6 +16,7 @@ public class Graph : MonoBehaviour
 
     Dictionary<Coordinates, Node> grid;
     public List<Node> GetAllGridNodes => grid.Values.ToList();
+    public List<Node> GetAllWalkableNodes => GetAllGridNodes.Where(n => !n.Blocked).ToList();
 
     void Awake()
     {

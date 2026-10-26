@@ -1,10 +1,12 @@
 using UnityEngine;
 
+public enum PatrolHunterState { None, Patrol, Baiting, Attack, Collect }
+
 public class PatrolAgent : Agent
 {
     StateMachine stateMachine;
 
-    PatrolState patrolState;
+    PatrolState patrolState; // cambiar nombre de clase para que no sea confuso con el enum
     [SerializeField] PatrolData patrolData;
 
     SetBaitState setBaitState;
@@ -113,16 +115,26 @@ public class PatrolAgent : Agent
 
     void Awake()
     {
+        SFMInitializer();   
+
+        stateMachine.ChangeState(PatrolHunterState.Patrol);
+
+        SetupDebugVisuals();
+    }
+
+    void SFMInitializer()
+    {
         stateMachine = new();
         //IdleState idleState = new();
         patrolState = new(this, patrolData);
-        setBaitState = new SetBaitState(this, baitData);
-        distanceAttackState = new DistanceAttackState(this, distanceData);
-        collectCorpseState = new CollectCorpseState(this, collectCorpseData);
+        setBaitState = new SetBaitState(this, baitData, stateMachine);
+        distanceAttackState = new DistanceAttackState(this, distanceData, stateMachine);
+        collectCorpseState = new CollectCorpseState(this, collectCorpseData, stateMachine);
 
-        stateMachine.ChangeState(patrolState);
-
-        SetupDebugVisuals();
+        stateMachine.RegisterState(PatrolHunterState.Patrol, patrolState);
+        stateMachine.RegisterState(PatrolHunterState.Baiting, setBaitState);
+        stateMachine.RegisterState(PatrolHunterState.Attack, distanceAttackState);
+        stateMachine.RegisterState(PatrolHunterState.Collect, collectCorpseState);
     }
 
     void Update()
@@ -145,70 +157,41 @@ public class PatrolAgent : Agent
     void Bait()
     {
         if (stateMachine.CurrentState == distanceAttackState) return;
+        if (stateMachine.CurrentState == setBaitState) return;
 
-        if (distanceData.target == null)
-        {
-            if (stateMachine.CurrentState == setBaitState)
-            {
-                if (setBaitState.BaitPlaced)
-                {
-                    stateMachine.ChangeState(patrolState);
-                    baitTimer = 0;
-                }
-                return;
-            }
-
-            baitTimer += Time.deltaTime;
-            if (baitCooldown < baitTimer)
-            {
-                stateMachine.ChangeState(setBaitState);
-                baitTimer = 0;
-            }
-        }
-        else
+        if (distanceData.target != null)
         {
             baitTimer = 0;
+            return;
+        }
+
+        baitTimer += Time.deltaTime;
+        if (baitTimer > baitCooldown)
+        {
+            baitTimer = 0;
+            stateMachine.ChangeState(PatrolHunterState.Baiting);
         }
     }
 
     void DistanceAttack()
     {
-        if (stateMachine.CurrentState == distanceAttackState)
-        {
-            if (distanceData.hasShot || distanceData.targetLost)
-            {
-                distanceData.target = null;
-                distanceData.targetLost = false;
-                stateMachine.ChangeState(patrolState);
-            }
-            return;
-        }
+        if (stateMachine.CurrentState == distanceAttackState) return;
 
         if (distanceData.target != null && distanceData.target.killed == false)
         {
-            stateMachine.ChangeState(distanceAttackState);
+            stateMachine.ChangeState(PatrolHunterState.Attack);
         }
     }
 
     void CollectCorpse()
     {
         if (stateMachine.CurrentState == distanceAttackState) return;
+        if (stateMachine.CurrentState == collectCorpseState) return;
 
-        if (stateMachine.CurrentState == collectCorpseState)
+
+        if (collectCorpseData.target != null)
         {
-            if (collectCorpseData.collected)
-            {
-                distanceData.target = null;
-                collectCorpseData.target = null;
-                stateMachine.ChangeState(patrolState);
-            }
-
-            return;
-        }
-
-        if (distanceData.target != null)
-        {
-            stateMachine.ChangeState(collectCorpseState);
+            stateMachine.ChangeState(PatrolHunterState.Collect);
         }
     }
 
@@ -221,7 +204,7 @@ public class PatrolAgent : Agent
 
             if (distanceFromSheep < distanceData.sightRange && distanceData.target == null)
             {
-                distanceData.target = other.GetComponent<SheepMovement>();
+                if (!distanceData.target.killed) distanceData.target = other.GetComponent<SheepMovement>();
                 collectCorpseData.target = other.GetComponent<SheepMovement>();
                 Debug.Log("target located");
             }

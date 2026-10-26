@@ -3,23 +3,24 @@ using UnityEngine;
 
 public class CollectCorpseState : State
 {
-    Agent agent;
-    CollectCorpseData data;
+    readonly Agent agent;
+    readonly CollectCorpseData data;
     float collectionTimer;
+    readonly StateMachine sm;
 
-    public CollectCorpseState(Agent agent, CollectCorpseData data)
+    public CollectCorpseState(Agent agent, CollectCorpseData data, StateMachine stateMachine)
     {
         this.agent = agent;
         this.data = data;
+        this.sm = stateMachine;
     }
 
     public override void Enter()
     {
         collectionTimer = 0;
-        data.collected = false;
+        //data.collected = false;
 
         agent.GetComponentInChildren<Renderer>().material.color = data.goingToCollectColor;
-
     }
 
     public override void Update()
@@ -36,9 +37,11 @@ public class CollectCorpseState : State
 
             if (collectionTimer > data.collectionTime)
             {
-                data.collected = true;
+                //data.collected = true;
                 UnityEngine.Object.Destroy(data.target.gameObject);
-                // agregar Cazador.collectedCorpses ++;
+                data.target = null;
+                sm.ChangeState(PatrolHunterState.Patrol);
+                data.collectedCorpses ++;
             }
         }
     }
@@ -55,7 +58,8 @@ public class CollectCorpseData
     public Agent target;
     public float collectionTime;
     public float collectRange;
-    [NonSerialized] public bool collected;
+    //[NonSerialized] public bool collected;
     public Color collectingColor;
     public Color goingToCollectColor;
+    public int collectedCorpses = 0;
 }

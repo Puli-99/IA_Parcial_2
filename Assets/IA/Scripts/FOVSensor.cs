@@ -11,7 +11,7 @@ public class FOVSensor : MonoBehaviour
     [SerializeField] protected LayerMask targetMask = ~0;
     [SerializeField] protected LayerMask obstacleMask = ~0;
 
-    protected Transform target;
+    [SerializeField] protected Transform target;
 
     public bool CanSeeTarget { get; protected set; }
 

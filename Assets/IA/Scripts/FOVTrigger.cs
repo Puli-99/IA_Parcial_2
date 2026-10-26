@@ -3,18 +3,18 @@ using System.Collections;
 
 public class FOVTrigger : FOVSensor
 {
-    [SerializeField] float followTime;
-    bool targetInRange;
+    [SerializeField] float followTime = 2;
+    [SerializeField] bool targetInRange;
     Coroutine keepLookingCoroutine;
 
-    private void Awake()
+    void Awake()
     {
         SphereCollider sensor = gameObject.AddComponent<SphereCollider>();
         sensor.isTrigger = true;
         sensor.radius = viewRadius;
     }
 
-    private void OnTriggerEnter(Collider other)
+    void OnTriggerEnter(Collider other)
     {
         if (!IsAValidTarget(other.gameObject.layer, targetMask)) return;
 
@@ -26,7 +26,7 @@ public class FOVTrigger : FOVSensor
         Debug.Log("Player found: " + other.gameObject.layer);
     }
 
-    private void OnTriggerExit(Collider other)
+    void OnTriggerExit(Collider other)
     {
         if (!IsAValidTarget(other.gameObject.layer, targetMask)) return;
 
@@ -34,7 +34,7 @@ public class FOVTrigger : FOVSensor
         Debug.Log("Player Exited");
     }
 
-    private void Update()
+    void Update()
     {
         CanSeeTarget = targetInRange && target != null && InViewAngle() && HasLineOfSight(); // ESTO ES LO QUE IMPORTA
     }
