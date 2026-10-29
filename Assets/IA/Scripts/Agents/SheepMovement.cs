@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public enum SheepState { None, Idle, Flock, Eat, Escape, Dead }
@@ -6,8 +8,10 @@ public enum SheepState { None, Idle, Flock, Eat, Escape, Dead }
 public class SheepMovement : Agent
 {
 
-    [SerializeField] PatrolAgent hunter;
+    [SerializeField] Agent hunter;
     [SerializeField] Transform bait;
+    [SerializeField] Renderer render;
+    [SerializeField] Collider col;
 
     readonly static List<SheepMovement> allAgents = new();
     public List<SheepMovement> AllAgents { get { return allAgents; } }
@@ -55,18 +59,11 @@ public class SheepMovement : Agent
         stateMachine.RegisterState(SheepState.Dead, deadState);
     }
 
-
     void Update()
     {
         transform.position = Bounds.Instance.OutOfBounds(transform.position);
 
         stateMachine.Update();
-
-        //if (stateMachine.CurrentState == escapeState && escapeState.IsSafe)
-        //    ToFlockFromEscape();
-
-        //if (stateMachine.CurrentState == eatState && eatState.Finished)
-        //    ToFlockFromEat();
 
         Escape();
 
@@ -74,6 +71,8 @@ public class SheepMovement : Agent
 
         if (velocity != Vector3.zero)
             transform.forward = velocity;
+
+        KeepHeight(1);
     }
 
     void Escape()
@@ -96,11 +95,28 @@ public class SheepMovement : Agent
         stateMachine.ChangeState(SheepState.Dead);
     }
 
+    public void Respawn()
+    {
+        if (!killed) return;
+        col.enabled = false;
+        StartCoroutine(Revive());
+    }
+
     public void ClearHunter() => hunter = null;
 
     public override void OnArrive()
     {
         velocity = Vector3.zero;
+    }
+
+    void KeepHeight(float height) // pequeño fix porque sino estan en y = 0 se van volando :C
+    {
+        if (transform.position.y != height)
+        {
+            Vector3 x = transform.position;
+            x.y = height;
+            transform.position = x;
+        }
     }
 
     private void OnTriggerStay(Collider other)
@@ -109,7 +125,7 @@ public class SheepMovement : Agent
         {
             if (other.gameObject.CompareTag("Hunter") && stateMachine.CurrentState != eatState)
             {
-                hunter = other.GetComponent<PatrolAgent>();
+                hunter = other.GetComponent<Agent>();
                 escapeData.hunter = hunter;
             }
 
@@ -121,5 +137,32 @@ public class SheepMovement : Agent
                 stateMachine.ChangeState(SheepState.Eat);
             }
         }
+    }
+
+
+    IEnumerator Revive()
+    {
+        bool visible = true;
+        for (float t = 0f; t < 1.5f; t += 0.1f)
+        {
+            visible = !visible;
+            SetVisible(visible);
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        SetVisible(true);
+
+        List<Node> n = Graph.current.GetAllGridNodes.Where(node => node.Zone == Node.ZoneType.Entry).ToList();
+
+        Node entryNode = n[Random.Range(0, n.Count())];
+        transform.position = entryNode.transform.position;
+        killed = false;
+        col.enabled = true;
+        stateMachine.ChangeState(SheepState.Flock);
+    }
+
+    void SetVisible(bool value)
+    {
+        render.enabled = value;
     }
 }

@@ -143,8 +143,12 @@ MonoBehaviour:
     detectionRange: 10
     stopRange: 2
     slowRange: 7.5
+  velocity: {x: 0, y: 0, z: 0}
   hunter: {fileID: 0}
   bait: {fileID: 0}
+  render: {fileID: 2878237129102880147}
+  col: {fileID: 6627928269475094394}
+  killed: 0
   flockData:
     separationWeight: 1
     alignmentWeight: 2
@@ -162,8 +166,6 @@ MonoBehaviour:
     safeRange: 15
     safeTime: 3
     escapingTime: 0
-  deadData:
-    time: 1.5
 --- !u!54 &7768679084225879644
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -189,7 +191,7 @@ Rigidbody:
   m_UseGravity: 0
   m_IsKinematic: 1
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 126
   m_CollisionDetection: 0
 --- !u!135 &6627928269475094394
 SphereCollider:

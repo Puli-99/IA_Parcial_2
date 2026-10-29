@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 public class CollectCorpseState : State
@@ -7,6 +6,7 @@ public class CollectCorpseState : State
     readonly CollectCorpseData data;
     float collectionTimer;
     readonly StateMachine sm;
+    Vector3 targetPosition;
 
     public CollectCorpseState(Agent agent, CollectCorpseData data, StateMachine stateMachine)
     {
@@ -18,16 +18,24 @@ public class CollectCorpseState : State
     public override void Enter()
     {
         collectionTimer = 0;
-        //data.collected = false;
+
+        if (data.target == null)
+        {
+            sm.ChangeState(HunterState.Search);
+            return;
+        }
 
         agent.GetComponentInChildren<Renderer>().material.color = data.goingToCollectColor;
+        targetPosition = data.target.transform.position;
+        targetPosition.y = 1;
     }
 
     public override void Update()
     {
-        agent.AddVelocity(agent.Arrive(data.target.transform.position));
 
-        float distance = (agent.transform.position - data.target.transform.position).magnitude;
+        agent.AddVelocity(agent.Seek(targetPosition));
+
+        float distance = (agent.transform.position - targetPosition).magnitude;
         if (distance < data.collectRange)
         {
             agent.StopVelocity();
@@ -37,18 +45,23 @@ public class CollectCorpseState : State
 
             if (collectionTimer > data.collectionTime)
             {
-                //data.collected = true;
-                UnityEngine.Object.Destroy(data.target.gameObject);
+                if (data.target.TryGetComponent<SheepMovement>(out SheepMovement s))
+                {
+                    s.Respawn();
+                }
+
                 data.target = null;
-                sm.ChangeState(PatrolHunterState.Patrol);
                 data.collectedCorpses ++;
+
+                if (agent is PathfindingAgent) sm.ChangeState(HunterState.Search);
+                else if (agent is PatrolAgent) sm.ChangeState(PatrolHunterState.Patrol);
             }
         }
     }
 
     public override void Exit()
     {
-
+        agent.StopAllCoroutines();
     }
 }
 
@@ -58,7 +71,6 @@ public class CollectCorpseData
     public Agent target;
     public float collectionTime;
     public float collectRange;
-    //[NonSerialized] public bool collected;
     public Color collectingColor;
     public Color goingToCollectColor;
     public int collectedCorpses = 0;

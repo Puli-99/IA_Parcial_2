@@ -1,3 +1,6 @@
+using NUnit.Framework;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class ChaseState : State
@@ -15,24 +18,41 @@ public class ChaseState : State
 
     public override void Enter()
     {
-
+        agent.GetComponentInChildren<Renderer>().material.color = data.chasingColor;
     }
 
     public override void Update()
     {
         agent.AddVelocity(agent.Seek(data.hunter.transform.position));
 
-        float distanceFromHunter = (agent.transform.position - data.hunter.transform.position).magnitude;
+        float distanceFromHunter = (agent.transform.position - data.hunter.position).magnitude;
 
-        if (distanceFromHunter < 0.1f)
+        if (distanceFromHunter < data.distanceToKill)
         {
-            Debug.Log("Kill hunter");
-        }        
+            if (data.hunter.TryGetComponent<Hunter>(out Hunter hunter))
+            {
+                hunter.Killed();
+                data.hunter = null;
+                sm.ChangeState(Wolf.WolfState.Patrol);
+            }
+        }
     }
 
     public override void Exit()
     {
+        FixOnAgentFinishedOnBlockedNode();
         data.hunter = null;
+    }
+
+    void FixOnAgentFinishedOnBlockedNode()
+    {
+        if (Graph.current.GetNodeFromPosition(agent.transform.position).Blocked)
+        {
+            Debug.Log("Reposicionando agente que termino en nodo bloqueado, para que no termine naufragando");
+            List<Node> n = Graph.current.GetAllWalkableNodes.Where(node => node.Zone == Node.ZoneType.None).ToList();
+
+            agent.transform.position = n[Random.Range(0, n.Count)].transform.position;
+        }
     }
 }
 
@@ -40,4 +60,6 @@ public class ChaseState : State
 public class ChaseData
 {
     public Transform hunter;
+    public float distanceToKill = 0.5f;
+    public Color chasingColor;
 }

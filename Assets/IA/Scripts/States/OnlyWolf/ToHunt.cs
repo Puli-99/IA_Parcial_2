@@ -17,6 +17,7 @@ public class ToHunt : State
 
     public override void Enter()
     {
+        agent.GetComponentInChildren<Renderer>().material.color = data.joiningColor;
         hunterInitialPos = data.hunter.position;
         agent.SetNodes(Graph.current.GetNodeFromPosition(agent.transform.position), Graph.current.GetNodeFromPosition(data.hunter.position));
         agent.CalculatePath(agent.StartNode, agent.EndNode);
@@ -27,17 +28,24 @@ public class ToHunt : State
 
         if (distanceFromInitialPos > data.recalculatePathDistance)
         {
-            hunterInitialPos = data.hunter.position;
-
-            Node start = Graph.current.GetNodeFromPosition(agent.transform.position);
-            Node end = Graph.current.GetNodeFromPosition(data.hunter.position);
-
-            agent.SetNodes(start, end);
-            agent.CalculatePath(agent.StartNode, agent.EndNode);
+            RecalculateTargetPathfinding();
         }
     }
+
+    void RecalculateTargetPathfinding()
+    {
+        hunterInitialPos = data.hunter.position;
+
+        Node start = Graph.current.GetNodeFromPosition(agent.transform.position);
+        Node end = Graph.current.GetNodeFromPosition(data.hunter.position);
+
+        agent.SetNodes(start, end);
+        agent.CalculatePath(agent.StartNode, agent.EndNode);
+    }
+
     public override void Exit()
     {
+        agent.StopAllCoroutines();
         data.hunter = null;
     }
 }
@@ -47,4 +55,5 @@ public class ToHuntData
 {
     public Transform hunter;
     public float recalculatePathDistance = 5;
+    public Color joiningColor;
 }

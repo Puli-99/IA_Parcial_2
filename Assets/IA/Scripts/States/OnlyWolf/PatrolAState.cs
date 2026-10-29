@@ -1,7 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class PatrolAState : State
 {
@@ -18,6 +16,7 @@ public class PatrolAState : State
 
     public override void Enter()
     {
+        agent.GetComponentInChildren<Renderer>().material.color = data.patrolColor;
         agent.SetNodes(Graph.current.GetNodeFromPosition(agent.transform.position), Graph.current.GetNodeFromPosition(data.waypoints[currentNode].position));
         agent.CalculatePath(agent.StartNode, agent.EndNode);
     }
@@ -56,4 +55,5 @@ public class PatrolAData
 {
     public List<Transform> waypoints = new();
     public float waypointCheckDistance = 1.1f;
+    public Color patrolColor;
 }

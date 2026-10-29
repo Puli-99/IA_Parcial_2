@@ -16,7 +16,6 @@ public class EscapeState : State
 
     public override void Enter()
     {
-        Debug.Log("EscapeState Enter");
         data.escapingTime = 0f;
         agent.GetComponentInChildren<Renderer>().material.color = Color.violet;
     }
@@ -46,14 +45,13 @@ public class EscapeState : State
 
     public override void Exit()
     {
-        Debug.Log("EscapeState Exit");
     }
 }
 
 [System.Serializable]
 public class EscapeData
 {
-    public PatrolAgent hunter;
+    public Agent hunter;
     public float safeRange = 15.0f;
     public float safeTime = 3.0f;
     public float escapingTime;

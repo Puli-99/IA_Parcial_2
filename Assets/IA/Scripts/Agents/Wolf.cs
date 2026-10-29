@@ -4,8 +4,8 @@ using UnityEngine;
 [RequireComponent(typeof(FOVSensor))]
 public class Wolf : PathfindingAgent
 {
-    public enum WolfState { None, Patrol, Howl, Chase, ToHunt/*cambiar nombre por algo mejor*/ }
-    static List<Wolf> pack = new();
+    public enum WolfState { None, Patrol, Howl, Chase, ToHunt/*cambiar nombre por un mejor nombre*/ }
+    readonly static List<Wolf> pack = new();
 
 
     // States Machines
@@ -27,6 +27,7 @@ public class Wolf : PathfindingAgent
     [SerializeField] FOVSensor sense;
     [SerializeField] string state;
 
+    Hunter hunterRef;
 
 
     void Awake()
@@ -71,8 +72,10 @@ public class Wolf : PathfindingAgent
 
     void ChangeStateManagement()
     {
-        if (IsHunterOnSafeZone())
+        if (IsHunterOnSafeZone() || IsHunterDead())
         {
+            chaseData.hunter = null;
+            toHuntData.hunter = null;
             stateMachine.ChangeState(WolfState.Patrol);
             return;
         }
@@ -100,24 +103,29 @@ public class Wolf : PathfindingAgent
         }
     }
 
+    bool TryGetHunterRef()
+    {
+        if (hunterRef != null) return true;
+
+        Transform transform = GetAnyHunterTransform();
+        return transform != null && transform.TryGetComponent(out hunterRef);
+    }
+
+    bool IsHunterDead() => TryGetHunterRef() && hunterRef.Dead;
+
     bool IsHunterOnSafeZone()
     {
-        if (sense.Target != null)
-        {
-            return Graph.current.GetNodeFromPosition(sense.Target.position).Zone == Node.ZoneType.Safe;
-        }
+        Transform hunter = GetAnyHunterTransform();
+        return hunter != null && Graph.current.GetNodeFromPosition(hunter.position).Zone == Node.ZoneType.Safe;
+    }
 
-        if (chaseData.hunter != null)
-        {
-            return Graph.current.GetNodeFromPosition(chaseData.hunter.position).Zone == Node.ZoneType.Safe;
-        }
+    Transform GetAnyHunterTransform()
+    {
+        if (sense.Target != null) return sense.Target;
+        if (chaseData.hunter != null) return chaseData.hunter;
+        if (toHuntData.hunter != null) return toHuntData.hunter;
 
-        if (toHuntData.hunter != null)
-        {
-            return Graph.current.GetNodeFromPosition(toHuntData.hunter.position).Zone == Node.ZoneType.Safe;
-        }
-
-        return false;
+        return null;
     }
 
     void OnDisable()

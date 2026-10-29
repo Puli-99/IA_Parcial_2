@@ -23,7 +23,6 @@ public class FOVTrigger : FOVSensor
 
         target = other.transform.root;
         targetInRange = true;
-        Debug.Log("Player found: " + other.gameObject.layer);
     }
 
     void OnTriggerExit(Collider other)
@@ -31,7 +30,6 @@ public class FOVTrigger : FOVSensor
         if (!IsAValidTarget(other.gameObject.layer, targetMask)) return;
 
         keepLookingCoroutine = StartCoroutine(KeepLooking());
-        Debug.Log("Player Exited");
     }
 
     void Update()
@@ -43,6 +41,5 @@ public class FOVTrigger : FOVSensor
     {
         yield return new WaitForSeconds(followTime);
         targetInRange = false;
-        Debug.Log("Player lost");
     }
 }

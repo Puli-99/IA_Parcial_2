@@ -31,6 +31,7 @@ public class HowlState : State
 
     public override void Enter()
     {
+        agent.GetComponentInChildren<Renderer>().material.color = data.howlingColor;
         ClearRings(); // por si se reentra antes de terminar
 
         if (sharedMaterial == null)
@@ -46,7 +47,6 @@ public class HowlState : State
 
     public override void Exit()
     {
-        Debug.Log("Exit");
         ClearRings();
     }
 
@@ -98,8 +98,8 @@ public class HowlState : State
             float eased = 1f - (1f - n) * (1f - n); // ease-out
             SetCircle(ring.line, data.maxRadius * eased);
 
-            Color color = data.color;
-            color.a = data.color.a * (1f - n); // fade out
+            Color color = data.ringColor;
+            color.a = data.ringColor.a * (1f - n); // fade out
             ring.line.startColor = ring.line.endColor = color;
 
         }
@@ -130,11 +130,12 @@ public class HowlState : State
 [System.Serializable]
 public class HowlData
 {
-    public Color color = Color.white;
+    public Color ringColor = Color.white;
     public float maxRadius = 3f;
     public float duration = 0.8f;
     public float lineWidth = 0.05f;
     public int ringCount = 2;
     public float ringDelay = 0.15f;
     public float heightOffset = 0.05f; // evita z-fighting con el piso
+    public Color howlingColor;
 }

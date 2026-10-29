@@ -14,7 +14,24 @@ public class Bounds : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    public Vector3 OutOfBounds(Vector3 position)
+    public Vector3 OutOfBounds(Vector3 position) // esta toma version toma en cuenta la posicion del objeto
+    {
+        Vector3 center = transform.position;
+        Vector3 offset = position - center;
+
+        float halfW = width / 2f;
+        float halfH = height / 2f;
+
+        if (offset.x > halfW) offset.x = -halfW;
+        else if (offset.x < -halfW) offset.x = halfW;
+
+        if (offset.z > halfH) offset.z = -halfH;
+        else if (offset.z < -halfH) offset.z = halfH;
+
+        return center + offset;
+    }
+
+    /*public Vector3 OutOfBounds(Vector3 position)
     {
         Vector3 newPos = position;
 
@@ -25,7 +42,8 @@ public class Bounds : MonoBehaviour
         if (position.z < -height / 2) newPos.z = height / 2;
 
         return newPos;
-    }
+
+    }*/
 
     void OnDrawGizmos()
     {

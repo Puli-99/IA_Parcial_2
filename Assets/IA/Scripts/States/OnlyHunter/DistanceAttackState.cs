@@ -7,11 +7,12 @@ public class DistanceAttackState : State
     float shootTimer;
     float outOfAimTimer;
     bool bShooting;
+    Renderer agentrenderer;
+
 
     readonly Agent agent;
     readonly DistanceData data;
-
-    StateMachine sm;
+    readonly StateMachine sm;
     public DistanceAttackState(Agent hunter, DistanceData data, StateMachine stateMachine)
     {
         this.agent = hunter;
@@ -21,59 +22,70 @@ public class DistanceAttackState : State
 
     public override void Enter()
     {
-        Debug.Log("DistanceAttackState Enter");
+        agent.StopAllCoroutines();
         data.hasShot = false;
         data.targetLost = false;
         bShooting = false;
         shootTimer = 0;
         outOfAimTimer = 0;
-        agent.GetComponentInChildren<Renderer>().material.color = data.initialColor;
-
+        agentrenderer = agent.GetComponentInChildren<Renderer>();
+        ChangeColor(data.initialColor);
     }
 
     public override void Update()
     {
         if (data.target == null) { Finish(); return; }
 
-        float distance = (agent.transform.position - data.target.transform.position).magnitude;
+        PatrolAgentAttack();
+    }
 
-        if (distance < data.aimRange)
+    void PatrolAgentAttack()
+    {
+        float distanceFromTarget = (agent.transform.position - data.target.transform.position).magnitude;
+
+        if (distanceFromTarget < data.aimRange) 
         {
             shootCooldownTimer -= Time.deltaTime;
             if (shootCooldownTimer >= 0)
             {
-                agent.GetComponentInChildren<Renderer>().material.color = Color.grey;
+                ChangeColor(data.onCooldownColor);
+
                 return;
             }
 
-            if (PrepareShot()) { Finish(); return; }
+            if (PrepareShot()) { Finish(); return; } // una vez terminada la recarga, preparamos el tiro, si terminamos de disparar (PrepareShot() = true) entonces terminamos
 
             bShooting = true;
             outOfAimTimer = 0;
-            agent.GetComponentInChildren<Renderer>().material.color = data.aimingColor;
+
             agent.StopVelocity();
         }
-        else if (distance > data.sightRange)
+        else if (distanceFromTarget > data.sightRange)
         {
-            bShooting = false;
+            ChangeColor(data.pursuitColor);
+
+            shootCooldownTimer -= Time.deltaTime;
             shootTimer = 0;
+
             agent.AddVelocity(agent.Pursuit(data.target));
-            agent.GetComponentInChildren<Renderer>().material.color = data.pursuitColor;
 
             outOfAimTimer += Time.deltaTime;
             if (outOfAimTimer > data.pursuitTime) { Finish(); return; }
         }
-        else if (!bShooting)
+        else if (!bShooting) // Si la distancia es menor a sightRange, pero mayor a aimRange, y no estabamos preparando el tiro, seguimos al objetivo
         {
+            ChangeColor(data.pursuitColor);
+            shootCooldownTimer -= Time.deltaTime;
             shootTimer = 0;
             agent.AddVelocity(agent.Pursuit(data.target));
         }
-        else
+        else // Sigue entre la distancia sightRange y aimRange, pero estabamos preparando el tiro
         {
             shootCooldownTimer -= Time.deltaTime;
             if (shootCooldownTimer >= 0)
             {
-                agent.GetComponentInChildren<Renderer>().material.color = Color.grey;
+                ChangeColor(data.onCooldownColor);
+                agent.StopVelocity();
                 return;
             }
             if (PrepareShot()) { Finish(); return; }
@@ -82,10 +94,11 @@ public class DistanceAttackState : State
 
     bool PrepareShot()
     {
+        ChangeColor(data.aimingColor);
         shootTimer += Time.deltaTime;
         if (shootTimer <= data.aimingTime) return false;
 
-        agent.GetComponentInChildren<Renderer>().material.color = data.shotColor;
+        ChangeColor(data.shotColor);
         shootCooldownTimer = data.shootCooldown;
         data.target.Killed();
         return true;
@@ -94,12 +107,19 @@ public class DistanceAttackState : State
     void Finish()
     {
         data.target = null;
-        sm.ChangeState(PatrolHunterState.Patrol);
+
+        if (agent is PathfindingAgent) sm.ChangeState(HunterState.Search);
+        else if (agent is PatrolAgent) sm.ChangeState(PatrolHunterState.Patrol);
+    }
+
+    void ChangeColor(Color newColor)
+    {
+        agentrenderer.material.color = newColor;
     }
 
     public override void Exit()
     {
-        Debug.Log("DistanceState Exit");
+        agent.StopAllCoroutines();
     }
 }
 
@@ -118,4 +138,5 @@ public class DistanceData
     public Color pursuitColor = Color.cornflowerBlue;
     public Color aimingColor = Color.gold;
     public Color initialColor = Color.white;
+    public Color onCooldownColor;
 }

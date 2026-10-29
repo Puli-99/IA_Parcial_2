@@ -15,7 +15,6 @@ public class EatState : State
     }
     public override void Enter()
     {
-        Debug.Log("EatState Enter");
         data.eatTimer = 0f;
         agent.GetComponentInChildren<Renderer>().material.color = Color.brown;
     }
@@ -41,7 +40,6 @@ public class EatState : State
 
     public override void Exit()
     {
-        Debug.Log("EatState Exit");
     }
 }
 

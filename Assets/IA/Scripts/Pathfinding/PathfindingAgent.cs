@@ -37,8 +37,7 @@ public class PathfindingAgent : Agent
     public void CalculatePath(Node startNode, Func<Node, bool> endNode)
     {
         path = Pathfinding.AStar(startNode, endNode);
-        this.endNode = path[path.Count - 1];
-        // path[path.Count - 1].name este es mi endNode
+        this.endNode = path[^1];
         if (path != null && path.Count > 0)
         {
             if (walkCoroutine != null) StopCoroutine(walkCoroutine);
