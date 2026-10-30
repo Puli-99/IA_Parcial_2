@@ -7,7 +7,7 @@ public class DistanceAttackState : State
     float shootTimer;
     float outOfAimTimer;
     bool bShooting;
-    Renderer agentrenderer;
+    Renderer agentRenderer;
 
 
     readonly Agent agent;
@@ -28,7 +28,7 @@ public class DistanceAttackState : State
         bShooting = false;
         shootTimer = 0;
         outOfAimTimer = 0;
-        agentrenderer = agent.GetComponentInChildren<Renderer>();
+        agentRenderer = agent.GetComponentInChildren<Renderer>();
         ChangeColor(data.initialColor);
     }
 
@@ -114,7 +114,7 @@ public class DistanceAttackState : State
 
     void ChangeColor(Color newColor)
     {
-        agentrenderer.material.color = newColor;
+        agentRenderer.material.color = newColor;
     }
 
     public override void Exit()

@@ -45,18 +45,23 @@ public class CollectCorpseState : State
 
             if (collectionTimer > data.collectionTime)
             {
-                if (data.target.TryGetComponent<SheepMovement>(out SheepMovement s))
-                {
-                    s.Respawn();
-                }
-
-                data.target = null;
-                data.collectedCorpses ++;
-
-                if (agent is PathfindingAgent) sm.ChangeState(HunterState.Search);
-                else if (agent is PatrolAgent) sm.ChangeState(PatrolHunterState.Patrol);
+                BodyCollected();
             }
         }
+    }
+
+    void BodyCollected()
+    {
+        if (data.target.TryGetComponent<SheepMovement>(out SheepMovement s))
+        {
+            s.Respawn();
+        }
+
+        data.target = null;
+        data.collectedCorpses++;
+
+        if (agent is PathfindingAgent) sm.ChangeState(HunterState.Search);
+        else if (agent is PatrolAgent) sm.ChangeState(PatrolHunterState.Patrol);
     }
 
     public override void Exit()

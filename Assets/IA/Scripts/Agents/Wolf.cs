@@ -1,16 +1,17 @@
+using System;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 [RequireComponent(typeof(FOVSensor))]
 public class Wolf : PathfindingAgent
 {
     public enum WolfState { None, Patrol, Howl, Chase, ToHunt/*cambiar nombre por un mejor nombre*/ }
-    readonly static List<Wolf> pack = new();
 
 
-    // States Machines
+    #region States Vars
     StateMachine stateMachine;
-    public StateMachine StateMachine => stateMachine;
 
     PatrolAState patrolState;
     [SerializeField] PatrolAData patrolData;
@@ -23,12 +24,12 @@ public class Wolf : PathfindingAgent
 
     ToHunt toHuntState;
     [SerializeField] ToHuntData toHuntData;
+    [SerializeField] string state;
+    #endregion
+
 
     [SerializeField] FOVSensor sense;
-    [SerializeField] string state;
-
     Hunter hunterRef;
-
 
     void Awake()
     {
@@ -53,10 +54,14 @@ public class Wolf : PathfindingAgent
 
     void Start()
     {
-        pack.Add(this);
+        EnemyManager.Instance.HunterDetected += OnHunterDetected;
         stateMachine.ChangeState(WolfState.Patrol);
     }
 
+    void OnDisable()
+    {
+        EnemyManager.Instance.HunterDetected -= OnHunterDetected;
+    }   
 
     void Update()
     {
@@ -94,13 +99,16 @@ public class Wolf : PathfindingAgent
 
         if (stateMachine.CurrentState == howlState)
         {
-            foreach (var wolf in pack)
-            {
-                if (wolf.stateMachine.CurrentState is HowlState) continue;
-                wolf.toHuntData.hunter = sense.Target;
-                wolf.stateMachine.ChangeState(WolfState.ToHunt);
-            }
+            EnemyManager.Instance.HunterDetected?.Invoke(sense.Target);
         }
+    }
+
+    void OnHunterDetected(Transform target)
+    {
+        if (stateMachine.CurrentState is HowlState) return;
+
+        toHuntData.hunter = target;
+        stateMachine.ChangeState(WolfState.ToHunt);
     }
 
     bool TryGetHunterRef()
@@ -126,10 +134,5 @@ public class Wolf : PathfindingAgent
         if (toHuntData.hunter != null) return toHuntData.hunter;
 
         return null;
-    }
-
-    void OnDisable()
-    {
-        pack.Remove(this);
     }
 }

@@ -36,7 +36,7 @@ public class Graph : MonoBehaviour
                 node.transform.position = new(x * nodeOffset, 0f, y * nodeOffset);
 
                 Coordinates coord = new(x, y);
-                node.Setup(new Coordinates(x,y), 1);
+                node.Setup(new Coordinates(x,y), 1); // esto podria ser un Random.Range(1, 5)
 
                 grid.Add(coord, node);
             }

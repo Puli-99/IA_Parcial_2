@@ -23,7 +23,8 @@ public class ExitState : State
         {
             agent.StopVelocity();
             agent.GetComponentInChildren<Renderer>().material.color = data.onExitColor;
-            // llamar a respawn
+            // Hola Mati :D aca deberia llamar al respawn (hunter.Killed()), pero no lo hice para que maten al hunter mas facil
+            // y puedas ver mas rapido el comportamiento de cuando muere el hunter
         }
     }
     public override void Exit()

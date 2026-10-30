@@ -40,18 +40,18 @@ public class ChaseState : State
 
     public override void Exit()
     {
-        FixOnAgentFinishedOnBlockedNode();
+        FinishedOnBlockedNode();
         data.hunter = null;
     }
 
-    void FixOnAgentFinishedOnBlockedNode()
+    void FinishedOnBlockedNode()
     {
         if (Graph.current.GetNodeFromPosition(agent.transform.position).Blocked)
         {
             Debug.Log("Reposicionando agente que termino en nodo bloqueado, para que no termine naufragando");
             List<Node> n = Graph.current.GetAllWalkableNodes.Where(node => node.Zone == Node.ZoneType.None).ToList();
 
-            agent.transform.position = n[Random.Range(0, n.Count)].transform.position;
+            agent.transform.position = n[Random.Range(0, n.Count)].transform.position; // cambiar esto por A* hacia el nodo no bloqueado mas cercano
         }
     }
 }

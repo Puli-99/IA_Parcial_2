@@ -63,7 +63,6 @@ public class SetBaitState : State
                 }
             }
         }
-
     }
 
     void PatrolAgentSetsBait()
